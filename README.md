@@ -1,16 +1,21 @@
 # Skyvakt
 
-Personlig nettside for teknisk analyse med Ichimoku-sky og kjøpssignaler. Lys og mørk modus, lesning i klartekst, historikk for signalene og kakediagram over watchlisten.
+Personlig nettside for teknisk og fundamental analyse. Kjøpssignaler fra enten Ichimoku-skyen eller CCI, Bollinger Bands og MACD sammen, og en egen fane med nøkkeltall som P/E. Lys og mørk modus, lesning i klartekst, historikk for signalene og kakediagram over watchlisten.
 Kjører gratis på Cloudflare Workers.
 
-*Teknisk analyse, ikke personlig investeringsrådgivning.*
+*Analyse, ikke personlig investeringsrådgivning.*
+
+Versjon 1 (bare Ichimoku) ligger på grenen `v1`.
 
 ## Innhold
 
 - `public/` – nettsiden (statiske filer). Grafen er TradingView Lightweight Charts v5.2.1, lagt inn i `public/vendor/`.
 - `public/ichimoku.js` – Ichimoku-beregning og signaler. Brukes av både nettsiden og workeren.
+- `public/indicators.js` – CCI, Bollinger Bands, MACD og det samlede signalet fra dem.
+- `public/strategies.js` – de to signalstrategiene, felles for nettside og worker.
+- `src/fundamentals.js` – nøkkeltall fra Yahoo Finance (quoteSummary med cookie og crumb), mellomlagret i KV i 12 timer.
 - Kart over hovedkontoret for norske selskaper: adresse fra Brønnøysundregistrene, koordinater fra Kartverkets adresse-API, vist med MapLibre GL JS 5.24.0 (lagt inn i `public/vendor/maplibre/`) og OpenFreeMap-stilen liberty.
-- `src/worker.js` – API (`/api/chart`, `/api/search`, `/api/scan`, `/api/watchlist`, `/api/weights`, `/api/company`) som henter kurser fra Yahoo Finance, og den daglige varslingsjobben.
+- `src/worker.js` – API (`/api/chart`, `/api/search`, `/api/scan`, `/api/watchlist`, `/api/weights`, `/api/company`, `/api/settings`, `/api/fundamentals`) som henter kurser fra Yahoo Finance, og den daglige varslingsjobben.
 - `wrangler.jsonc` – Cloudflare-oppsett: KV-lagring for watchlist og cron hverdager 15:30 og 21:30 UTC.
 
 ## Signaler
@@ -23,6 +28,20 @@ Sterkt kjøpssignal når alle fire er sanne på siste candle:
 4. Skyen 26 perioder frem er grønn (Senkou A > Senkou B).
 
 Svakt kjøpssignal: kursbrudd opp gjennom skyen, eller TK-kryss som ikke er under skyen.
+
+### CCI + Bollinger Bands + MACD
+
+Velges med knappen «Kjøpssignal» øverst. Valget lagres på serveren, så varslene følger det samme. Sterkt kjøpssignal når alle tre har skjedd de siste 8 periodene:
+
+1. CCI (20) har krysset opp gjennom −100.
+2. Kursen har vært nede ved nedre Bollinger-bånd (20, 2) og lukker nå over det.
+3. MACD (12, 26) har krysset over signallinjen (9) og ligger fortsatt over.
+
+To av tre gir svakt kjøpssignal. Ellers vises positiv trend (over midtlinjen og MACD over signallinjen), negativ trend (begge under) eller nøytral.
+
+## Fundamental
+
+Fanen «Fundamental» viser verdsettelse (P/E, forward P/E, P/B, EV/EBITDA, P/S, PEG), lønnsomhet, vekst, utbytte, gjeld og risiko, 52-ukers spenn og analytikernes kursmål. Fargene er grove tommelfingerregler og varierer mye mellom bransjer.
 
 ## Oppsett på Cloudflare (én gang)
 

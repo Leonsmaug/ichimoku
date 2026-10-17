@@ -141,3 +141,53 @@ test('innlogging uten oppsatte secrets er stengt', async () => {
   assert.equal((await loginCookie(env)).status, 503);
   assert.equal((await worker.fetch(new Request('https://x/api/scan?symbols=UP.OL'), env)).status, 401);
 });
+
+test('nøkkeltall fra Yahoo med cookie og crumb, og cache', async () => {
+  const { fundamentals } = await import('../src/fundamentals.js');
+  const calls = [];
+  globalThis.fetch = async (url, opts = {}) => {
+    url = String(url); calls.push(url);
+    if (url.startsWith('https://fc.yahoo.com')) return new Response('', { status: 404, headers: { 'set-cookie': 'A3=abc; Domain=.yahoo.com; Path=/' } });
+    if (url.includes('getcrumb')) { assert.equal(opts.headers.cookie, 'A3=abc'); return new Response('crumb123'); }
+    if (url.includes('quoteSummary')) {
+      assert.match(url, /crumb=crumb123/);
+      return new Response(JSON.stringify({ quoteSummary: { result: [{
+        price: { currency: 'NOK', regularMarketPrice: { raw: 250 }, marketCap: { raw: 7e11 } },
+        summaryDetail: { trailingPE: { raw: 8.5 }, dividendYield: { raw: 0.09 }, fiftyTwoWeekHigh: { raw: 300 }, fiftyTwoWeekLow: { raw: 220 } },
+        defaultKeyStatistics: { priceToBook: { raw: 1.9 } },
+        financialData: { returnOnEquity: { raw: 0.21 }, recommendationKey: 'hold', financialCurrency: 'USD' },
+        recommendationTrend: { trend: [{ period: '0m', strongBuy: 2, buy: 3, hold: 10, sell: 1, strongSell: 0 }] },
+      }] } }));
+    }
+    throw new Error('uventet ' + url);
+  };
+  const env = { STATE: kv() };
+  const f = await fundamentals('EQNR.OL', env);
+  assert.equal(f.available, true);
+  assert.equal(f.pe, 8.5);
+  assert.equal(f.dividendYield, 0.09);
+  assert.equal(f.financialCurrency, 'USD');
+  assert.deepEqual(f.recommendationCounts, { kjop: 5, hold: 10, selg: 1 });
+  const n = calls.length;
+  await fundamentals('EQNR.OL', env);
+  assert.equal(calls.length, n, 'andre oppslag fra cache');
+
+  globalThis.fetch = async () => new Response('nei', { status: 500 });
+  const bad = await fundamentals('FEIL.OL', { STATE: kv() });
+  assert.equal(bad.available, false);
+});
+
+test('scan og varsler følger valgt strategi', async () => {
+  const env = { STATE: kv(), NTFY_TOPIC: 't', ...CREDS };
+  const { cookie } = await loginCookie(env);
+  const req = (path, o = {}) => worker.fetch(new Request('https://x' + path, { ...o, headers: { cookie } }), env);
+  let r = await req('/api/scan?symbols=DOWN.OL&strategy=combo');
+  const s = await r.json();
+  assert.equal(s['DOWN.OL'].max, 3);
+  assert.equal((await req('/api/scan?symbols=DOWN.OL&strategy=tull')).status, 400);
+  r = await req('/api/settings', { method: 'PUT', body: JSON.stringify({ strategy: 'combo' }) });
+  assert.deepEqual(await r.json(), { strategy: 'combo' });
+  await env.STATE.put('watchlist', JSON.stringify(['DOWN.OL']));
+  await runAlerts(env);
+  assert.ok(await env.STATE.get('laststatus:combo'), 'status lagres per strategi');
+});

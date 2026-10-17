@@ -21,8 +21,8 @@
     <div class="brand">
       <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M9 24h15a6 6 0 0 0 .6-12A8 8 0 0 0 9.3 14 5 5 0 0 0 9 24z"/></svg>
       <div>
-        <h1>Skyvakt</h1>
-        <span>Ichimoku · Oslo og Nasdaq</span>
+        <h1>Skyvakt <sup>v2</sup></h1>
+        <span>Oslo og Nasdaq</span>
       </div>
       <button id="logout" class="icon-btn" title="Logg ut">
         <svg viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l4-4-4-4M14 12H4"/></svg>
@@ -59,38 +59,44 @@
       </div>
       <div class="price"><span id="last"></span><span id="chg"></span></div>
       <div id="signal" class="badge"></div>
-      <div class="toggle" role="group" aria-label="Intervall">
-        <button data-interval="1d" class="active">Dag</button>
-        <button data-interval="1wk">Uke</button>
+      <div class="toolbar">
+        <div class="tabs" role="tablist" aria-label="Visning">
+          <button role="tab" data-tab="teknisk" class="active">Teknisk</button>
+          <button role="tab" data-tab="fundamental">Fundamental</button>
+        </div>
+        <div class="strategy">
+          <span>Kjøpssignal</span>
+          <div class="toggle" role="group" aria-label="Kjøpssignal">
+            <button data-strategy="ichimoku" class="active" title="Ichimoku-skyen">Ichimoku</button>
+            <button data-strategy="combo" title="Commodity Channel Index, Bollinger Bands og MACD sammen">CCI + BB + MACD</button>
+          </div>
+        </div>
+        <div class="toggle interval" role="group" aria-label="Intervall">
+          <button data-interval="1d" class="active">Dag</button>
+          <button data-interval="1wk">Uke</button>
+        </div>
       </div>
     </header>
     <section class="panel chart-panel">
       <div id="chart"></div>
-      <div id="legend">
-        <span><i class="l-tenkan"></i>Tenkan</span>
-        <span><i class="l-kijun"></i>Kijun</span>
-        <span><i class="l-chikou"></i>Chikou</span>
-        <span><i class="l-cloud"></i>Sky</span>
-        <span>▲ sterkt kjøpssignal</span>
-      </div>
+      <div id="legend"></div>
+    </section>
+    <section class="panel fund-panel" id="fund-panel" hidden>
+      <div id="fund"></div>
     </section>
   </main>
 
   <aside id="insight">
     <section class="panel card">
-      <h3>Lesning</h3>
-      <p id="story" class="story">Velg en aksje for å se hva skyen sier.</p>
+      <h3 id="insight-title">Lesning</h3>
+      <p id="story" class="story">Velg en aksje for å se hva signalene sier.</p>
       <ul id="conditions"></ul>
-      <div class="metrics">
-        <div><span id="m-dist">–</span><small>fra skyen</small></div>
-        <div><span id="m-twist">–</span><small>til skyen skifter farge</small></div>
-        <div><span id="m-since">–</span><small>siden siste sterke kjøpssignal</small></div>
-      </div>
+      <div class="metrics" id="metrics"></div>
     </section>
 
     <section class="panel card">
       <h3>Har signalet virket før?</h3>
-      <p class="sub">Sterke kjøpssignaler på denne aksjen, målt mot en tilfeldig dag i samme periode.</p>
+      <p class="sub" id="backtest-sub">Sterke kjøpssignaler på denne aksjen, målt mot en tilfeldig dag i samme periode.</p>
       <table id="backtest"></table>
     </section>
 
@@ -121,7 +127,7 @@
       </label>
     </section>
 
-    <p class="disclaimer">Teknisk analyse, ikke personlig investeringsrådgivning. Historiske signaler sier ikke noe sikkert om fremtiden. Kurser fra Yahoo Finance, kan være forsinket.</p>
+    <p class="disclaimer">Analyse, ikke personlig investeringsrådgivning. Historiske signaler sier ikke noe sikkert om fremtiden. Kurser og nøkkeltall fra Yahoo Finance, kan være forsinket.</p>
   </aside>
 
   <script type="module" src="app.js"></script>

@@ -61,6 +61,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; }
 body {
   background: var(--bg);
@@ -167,6 +168,60 @@ main { display: flex; flex-direction: column; gap: 12px; min-width: 0; height: c
 .l-tenkan { background: var(--tenkan); } .l-kijun { background: var(--kijun); } .l-chikou { background: var(--chikou); }
 .l-cloud { height: 8px !important; background: linear-gradient(90deg, rgba(47,143,98,.35) 50%, rgba(201,74,54,.3) 50%); }
 
+.l-bb { height: 8px !important; background: rgba(59, 111, 212, .25); border: 1px solid var(--tenkan); }
+.l-cci { background: var(--chikou); } .l-macd { background: var(--tenkan); } .l-macd-sig { background: var(--kijun); }
+.brand sup { font-family: Inter, sans-serif; font-size: 10px; font-weight: 600; color: var(--accent); background: var(--accent-soft); padding: 1px 5px; border-radius: 6px; vertical-align: 6px; }
+
+/* verktøylinje: fane, signal og intervall */
+.toolbar { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; border-top: 1px solid var(--line); padding-top: 10px; }
+.toolbar .toggle { margin-left: 0; }
+.toolbar .interval { margin-left: auto; }
+main.fund-view .interval { display: none; }
+.tabs { display: flex; gap: 4px; }
+.tabs button { background: none; border: none; border-radius: 0; padding: 4px 6px; font-weight: 500; color: var(--muted); border-bottom: 2px solid transparent; }
+.tabs button:hover { color: var(--text); background: none; }
+.tabs button.active { color: var(--text); border-bottom-color: var(--accent); }
+.strategy { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.strategy .toggle button { font-size: 13px; }
+.chart-panel.combo #chart { min-height: 480px; }
+
+/* fundamental */
+.fund-panel { flex: 1; min-height: 0; overflow-y: auto; padding: 18px 20px; }
+.fund-loading, .fund-empty p { color: var(--muted); }
+.fund-empty { max-width: 520px; margin: 40px auto; text-align: center; }
+.fund-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.fund-head h3 { font-size: 20px; margin-bottom: 2px; }
+.fund-head .sub { margin: 0; }
+.fund-score { display: flex; align-items: center; gap: 10px; background: var(--surface-2); border-radius: 12px; padding: 8px 14px; max-width: 260px; }
+.fund-score b { font-family: Fraunces, Georgia, serif; font-size: 28px; line-height: 1; color: var(--s-sterk); }
+.fund-score span { font-size: 12px; color: var(--text-2); line-height: 1.3; }
+.fund-market, .analysts { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.fund-market > div, .analysts > div { background: var(--surface-2); border-radius: 12px; padding: 10px 14px; min-width: 150px; }
+.fund-market .grow { flex: 1; min-width: 240px; }
+.fund-market small, .analysts small, .tile small { display: block; font-size: 11px; color: var(--muted); }
+.fund-market b, .analysts b { display: block; font-family: Fraunces, Georgia, serif; font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.analysts span { font-size: 12px; color: var(--text-2); }
+.analysts .pos { color: var(--up); } .analysts .neg { color: var(--down); }
+.analysts .votes { flex: 1; min-width: 200px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+.vote-bar, .range-bar { display: flex; height: 8px; border-radius: 99px; overflow: hidden; background: var(--line); position: relative; }
+.vote-bar i { display: block; } .v-kjop { background: var(--s-sterk); } .v-hold { background: var(--s-over); } .v-selg { background: var(--s-under); }
+.vote-lbl, .range-lbl { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.range { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.range-bar { overflow: visible; background: linear-gradient(90deg, var(--s-under), var(--s-over), var(--s-sterk)); opacity: .85; }
+.range-bar i { position: absolute; top: -4px; width: 4px; height: 16px; margin-left: -2px; border-radius: 2px; background: var(--text); }
+.range-lbl span:nth-child(2) { color: var(--text); font-weight: 500; }
+.fgroup { margin-bottom: 14px; }
+.fgroup h4 { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 8px; }
+.tile { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; cursor: help; }
+.tile b { display: block; font-family: Fraunces, Georgia, serif; font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tile .hint { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); min-height: 18px; }
+.tile[class*="tone-"] .hint::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--t); flex: none; }
+.tone-good { --t: var(--s-sterk); } .tone-mid { --t: var(--s-over); } .tone-weak { --t: var(--s-under); }
+.tile.empty b, .tile.empty .hint { color: var(--muted); }
+.fund-note { font-size: 12px; color: var(--muted); margin: 6px 0 0; }
+.fund-note:empty { display: none; }
+
 /* ---------- høyre: innsikt ---------- */
 #insight { display: flex; flex-direction: column; gap: 12px; height: calc(100vh - 24px); overflow-y: auto; }
 .card { padding: 16px 18px; }
@@ -241,6 +296,10 @@ main { display: flex; flex-direction: column; gap: 12px; min-width: 0; height: c
   #chart { min-height: 420px; }
   .title h2 { font-size: 22px; }
   .toggle { margin-left: 0; }
+  .toolbar .interval { margin-left: 0; }
+  .chart-panel.combo #chart { min-height: 560px; }
+  .fund-panel { overflow: visible; padding: 14px; }
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   #insight { display: flex; }
 }
 

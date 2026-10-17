@@ -1,4 +1,5 @@
-import { analyze, SIGNAL_TEXT } from '../public/ichimoku.js';
+import { strategyOf, STRATEGIES } from '../public/strategies.js';
+import { fundamentals } from './fundamentals.js';
 import { isLoggedIn, login, logout } from './auth.js';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
@@ -113,7 +114,7 @@ export async function companyLocation(symbol, name, env) {
   return out;
 }
 
-async function scan(symbols, interval = '1d') {
+async function scan(symbols, interval = '1d', strategy = 'ichimoku') {
   const out = {};
   // Små porsjoner så vi holder oss under grensen for samtidige subrequests.
   for (let i = 0; i < symbols.length; i += 6) {
@@ -121,7 +122,7 @@ async function scan(symbols, interval = '1d') {
     await Promise.all(batch.map(async (s) => {
       try {
         const d = await fetchCandles(s, interval);
-        const a = analyze(d.candles);
+        const a = strategyOf(strategy).analyze(d.candles);
         out[s] = { name: d.name, currency: d.currency, ...a.status };
       } catch (e) {
         out[s] = { error: String(e.message || e) };
@@ -129,6 +130,11 @@ async function scan(symbols, interval = '1d') {
     }));
   }
   return out;
+}
+
+async function getSettings(env) {
+  const s = (env.STATE && (await env.STATE.get('settings', 'json'))) || {};
+  return { strategy: STRATEGIES[s.strategy] ? s.strategy : 'ichimoku' };
 }
 
 async function getWatchlist(env) {
@@ -153,8 +159,12 @@ async function notify(env, title, message, symbol) {
 export async function runAlerts(env) {
   const symbols = await getWatchlist(env);
   if (!symbols.length) return { checked: 0, sent: 0 };
-  const last = (await env.STATE.get('laststatus', 'json')) || {};
-  const result = await scan(symbols);
+  const strategy = (await getSettings(env)).strategy;
+  const S = strategyOf(strategy);
+  // Husk status per strategi, så et bytte ikke utløser en bølge av varsler.
+  const lastKey = `laststatus:${strategy}`;
+  const last = (await env.STATE.get(lastKey, 'json')) || {};
+  const result = await scan(symbols, '1d', strategy);
   let sent = 0;
   for (const [s, st] of Object.entries(result)) {
     if (st.error) continue;
@@ -162,13 +172,13 @@ export async function runAlerts(env) {
     const isBuy = st.signal === 'sterk' || st.signal === 'svak';
     // Nytt signal, men ikke når et sterkt signal bare svekkes til svakt.
     if (isBuy && prev !== st.signal && prev !== 'sterk') {
-      await notify(env, `${s}: ${SIGNAL_TEXT[st.signal]}`,
-        `${st.name} lukket på ${st.close.toFixed(2)} ${st.currency || ''} (${st.time}). Ichimoku-score ${st.score}/4. Analyse, ikke investeringsråd.`, s);
+      await notify(env, `${s}: ${S.text[st.signal]} (${S.label})`,
+        `${st.name} lukket på ${st.close.toFixed(2)} ${st.currency || ''} (${st.time}). ${S.label}-score ${st.score}/${st.max}. Analyse, ikke investeringsråd.`, s);
       sent++;
     }
     last[s] = { signal: st.signal, time: st.time };
   }
-  await env.STATE.put('laststatus', JSON.stringify(last));
+  await env.STATE.put(lastKey, JSON.stringify(last));
   return { checked: symbols.length, sent };
 }
 
@@ -201,8 +211,22 @@ export default {
       if (p === '/api/scan') {
         const symbols = (url.searchParams.get('symbols') || '').split(',').filter((s) => SYMBOL_RE.test(s)).slice(0, 60);
         const interval = url.searchParams.get('interval') || '1d';
-        if (!INTERVALS[interval]) return json({ error: 'Ugyldig intervall' }, 400);
-        return json(await scan(symbols, interval), 200, 300);
+        const strategy = url.searchParams.get('strategy') || 'ichimoku';
+        if (!INTERVALS[interval] || !STRATEGIES[strategy]) return json({ error: 'Ugyldig intervall eller strategi' }, 400);
+        return json(await scan(symbols, interval, strategy), 200, 300);
+      }
+      if (p === '/api/settings') {
+        if (request.method === 'PUT') {
+          const body = await request.json().catch(() => ({}));
+          if (!STRATEGIES[body.strategy]) return json({ error: 'Ukjent strategi' }, 400);
+          await env.STATE.put('settings', JSON.stringify({ strategy: body.strategy }));
+        }
+        return json(await getSettings(env));
+      }
+      if (p === '/api/fundamentals') {
+        const symbol = url.searchParams.get('symbol') || '';
+        if (!SYMBOL_RE.test(symbol)) return json({ error: 'Ugyldig ticker' }, 400);
+        return json(await fundamentals(symbol, env), 200, 3600);
       }
       if (p === '/api/watchlist') {
         if (request.method === 'PUT') {
