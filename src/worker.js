@@ -79,7 +79,7 @@ async function findOrgnr(name) {
 // Forretningsadresse fra Brønnøysund og koordinater fra Kartverkets adresse-API.
 export async function companyLocation(symbol, name, env) {
   if (!symbol.endsWith('.OL')) return { norwegian: false };
-  const key = `company:${symbol}`;
+  const key = `company:v2:${symbol}`;
   const cached = env?.STATE && (await env.STATE.get(key, 'json'));
   if (cached) return cached;
 
@@ -95,7 +95,9 @@ export async function companyLocation(symbol, name, env) {
 
   let point = null, exact = false;
   if (a.landkode === 'NO' || !a.landkode) {
-    const q = new URLSearchParams({ sok: street || a.poststed || '', treffPerSide: '1', utkoordsys: '4258' });
+    // «Sandviksbodene 77A/B» -> «Sandviksbodene 77A»: Kartverket kjenner bare én bokstav per adresse.
+    const firstStreet = (a.adresse || []).find((l) => /\d/.test(l)) || street;
+    const q = new URLSearchParams({ sok: firstStreet.replace(/(\d+\s*[A-Za-z]?)\s*[\/-].*$/, '$1') || a.poststed || '', treffPerSide: '1', utkoordsys: '4258' });
     if (a.postnummer) q.set('postnummer', a.postnummer);
     let g = await (await fetch(`https://ws.geonorge.no/adresser/v1/sok?${q}`)).json().catch(() => null);
     exact = !!g?.adresser?.length;
