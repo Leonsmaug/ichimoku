@@ -384,3 +384,25 @@ body.pf-page { display: flex; flex-direction: column; gap: 12px; max-width: 1240
   .tip { white-space: normal; width: max-content; max-width: 240px; }
   .pf-table td, .pf-table th { padding-left: 4px; padding-right: 4px; }
 }
+
+/* diversifisering */
+.pf-verdict { font-family: Fraunces, Georgia, serif; font-size: 18px; font-weight: 600; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+.pf-verdict::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--s-over); }
+.pf-verdict.ok::before { background: var(--s-sterk); } .pf-verdict.warn::before { background: var(--s-under); }
+.pf-div-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 14px; }
+.pf-div-metrics span { white-space: normal; }
+.pf-div-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 20px; }
+.pf-div-grid h4 { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.pf-bars { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 6px; font-size: 13px; }
+.pf-bars li { display: grid; grid-template-columns: 96px 1fr 52px; align-items: center; gap: 8px; }
+.pf-bars .bar { height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.pf-bars .bar i { display: block; height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; }
+.pf-bars b { font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
+.pf-notes { margin: 0; }
+.pf-notes li { align-items: flex-start; line-height: 1.45; }
+.pf-notes li::before { margin-top: 1px; }
+#conditions.pf-notes li.warn::before { background-color: var(--s-over); background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M6 2.5v4.2M6 9h.01' stroke='white' stroke-width='1.8' stroke-linecap='round'/></svg>"); }
+@media (max-width: 860px) {
+  .pf-div-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pf-div-grid { grid-template-columns: 1fr; }
+}

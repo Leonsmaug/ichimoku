@@ -306,11 +306,91 @@ $('pf-holdings').addEventListener('click', (e) => {
   renderHoldings();
 });
 
+// ---------- Diversifisering ----------
+const REGIONS = [['norge', 'Norge'], ['norden', 'Norden ellers'], ['usa', 'USA'], ['europa', 'Europa'], ['global', 'Global'], ['krypto', 'Krypto'], ['kontanter', 'Kontanter']];
+const TECH = new Set(['GOOGL', 'GOOG', 'META', 'NFLX', 'AMZN', 'TSLA']);
+function region(r) {
+  if (r.cash) return 'kontanter';
+  if (r.sector === 'krypto') return 'krypto';
+  if (r.h?.type === 'aksje') {
+    if (r.ticker?.endsWith('.OL')) return 'norge';
+    if (/\.(ST|CO|HE)$/.test(r.ticker || '')) return 'norden';
+    return r.currency === 'NOK' ? 'norge' : r.currency === 'USD' ? 'usa' : 'europa';
+  }
+  const n = r.name.toLowerCase();
+  if (/norge|obx|utbytte/.test(n)) return 'norge';
+  if (/europa/.test(n)) return 'europa';
+  if (/usa|s&p|nasdaq|qqq|spdr|vanguard|information tech/.test(n)) return 'usa';
+  return 'global';
+}
+const isTech = (r) => !r.cash && (r.sector === 'teknologi' || TECH.has(r.ticker) || (r.h?.type !== 'aksje' && /teknologi|nasdaq|qqq|information tech|\bai\b|disruptive/i.test(r.name)));
+
+function renderDiversification() {
+  const rows = merged(state.rows.filter(inScope)).filter((r) => r.value > 0);
+  const total = sum(rows, 'value');
+  const el = $('pf-div-body');
+  if (!total) { el.innerHTML = '<p class="sub">Ingen beholdning i dette utvalget.</p>'; return; }
+  const inv = rows.filter((r) => !r.cash).sort((a, b) => b.value - a.value);
+  const invTotal = sum(inv, 'value');
+  const stocks = inv.filter((r) => r.h?.type === 'aksje');
+  const stockTotal = sum(stocks, 'value');
+  const funds = sum(inv.filter((r) => r.h?.type !== 'aksje'), 'value');
+  const cash = total - invTotal;
+  const top = inv[0];
+  const top5 = sum(inv.slice(0, 5), 'value');
+  const effN = stockTotal ? 1 / stocks.reduce((t, r) => t + (r.value / stockTotal) ** 2, 0) : 0;
+  const sectors = new Set(stocks.map((r) => r.sector)).size;
+  const reg = Object.fromEntries(REGIONS.map(([k]) => [k, 0]));
+  for (const r of rows) reg[region(r)] += r.value;
+  const tech = sum(inv.filter(isTech), 'value');
+  const topStock = stocks[0];
+
+  const notes = [];
+  const add = (ok, text) => notes.push([ok, text]);
+  if (funds / total >= 0.3) add(true, `${share(funds / total)} ligger i fond og ETF-er, som hver eier hundrevis av selskaper. Det gir mye spredning.`);
+  if (topStock && topStock.value / total > 0.1) add(false, `${esc(topStock.name)} er ${share(topStock.value / total)} av porteføljen. Over 10 % i én aksje gir høy enkeltselskapsrisiko.`);
+  else if (topStock) add(true, `Ingen enkeltaksje er over 10 % (størst er ${esc(topStock.name)} med ${share(topStock.value / total)}).`);
+  if (stocks.length) add(sectors >= 6, `Aksjene fordeler seg på ${sectors} sektorer, og ${Math.round(effN)} av ${stocks.length} aksjer teller reelt med tanke på vekting.`);
+  // Globale indeksfond er omtrent to tredeler USA (MSCI World-vekting).
+  const usaLook = (reg.usa + reg.global * 0.65) / total;
+  if (usaLook > 0.5) add(false, `Regnet med den amerikanske delen av globalfondene er rundt ${share(usaLook)} i USA. Det gir høy dollar- og USA-risiko.`);
+  if (reg.norge / total > 0.5) add(false, `${share(reg.norge / total)} er i Norge. Det er mye hjemmemarked, som påvirkes mye av oljeprisen og kronekursen.`);
+  if (tech / total > 0.3) add(false, `Rundt ${share(tech / total)} er knyttet til store teknologiselskaper, gjennom ${[...new Set(inv.filter(isTech).map((r) => r.h?.type === 'aksje' ? 'aksjer' : 'teknologifond'))].join(' og ')}. Mange av fondene eier de samme selskapene, så de overlapper.`);
+  if (cash / total > 0.15) add(false, `${share(cash / total)} står i kontanter.`);
+  else if (cash / total >= 0.02) add(true, `${share(cash / total)} i kontanter gir en buffer uten å bremse avkastningen mye.`);
+  const warn = notes.filter(([ok]) => !ok).length;
+  const verdict = warn === 0 ? 'Godt diversifisert' : warn <= 2 ? 'Ganske godt diversifisert, med noen klynger' : 'Konsentrert på flere områder';
+
+  const metric = (v, t) => `<div><span>${v}</span><small>${t}</small></div>`;
+  const maxReg = Math.max(...Object.values(reg));
+  el.innerHTML = `
+    <p class="pf-verdict ${warn ? (warn > 2 ? 'warn' : 'mid') : 'ok'}">${verdict}</p>
+    <div class="metrics pf-div-metrics">
+      ${metric(top ? share(top.value / total) : '–', `største posisjon${top ? ` (${esc(top.name.length > 22 ? top.name.slice(0, 21) + '…' : top.name)})` : ''}`)}
+      ${metric(share(top5 / total), 'i de fem største')}
+      ${metric(stocks.length ? `${Math.round(effN)} av ${stocks.length}` : '–', 'aksjer som teller reelt')}
+      ${metric(share(tech / total), 'knyttet til stor-tek')}
+    </div>
+    <div class="pf-div-grid">
+      <div>
+        <h4>Geografi</h4>
+        <ul class="pf-bars">${REGIONS.filter(([k]) => reg[k] > 0).map(([k, t]) => `
+          <li><span>${t}</span><span class="bar"><i style="width:${(reg[k] / maxReg) * 100}%"></i></span><b>${share(reg[k] / total)}</b></li>`).join('')}</ul>
+        <p class="sub">Globalfond er vist som «Global», selv om omtrent to tredeler av dem er USA.</p>
+      </div>
+      <div>
+        <h4>Funn</h4>
+        <ul id="conditions" class="pf-notes">${notes.map(([ok, t]) => `<li class="${ok ? 'ok' : 'warn'}">${t}</li>`).join('')}</ul>
+      </div>
+    </div>`;
+}
+
 function renderAll() {
   compute();
   renderStats();
   renderChips();
   renderDist();
+  renderDiversification();
   renderAccounts();
   renderHoldings();
 }
