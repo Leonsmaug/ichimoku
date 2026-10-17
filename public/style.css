@@ -89,7 +89,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 .brand > svg { width: 34px; height: 34px; fill: var(--accent); flex: none; }
 .brand h1 { font-size: 22px; line-height: 1.1; }
 .brand span { font-size: 12px; color: var(--muted); }
-.brand .icon-btn { margin-left: auto; }
+.brand #logout { margin-left: auto; }
+.brand #logout svg { width: 16px; height: 16px; }
 .icon-btn { width: 34px; height: 34px; padding: 0; display: grid; place-items: center; }
 .icon-btn.small { width: 28px; height: 28px; background: none; }
 .icon-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
@@ -239,3 +240,18 @@ main { display: flex; flex-direction: column; gap: 12px; min-width: 0; height: c
   .toggle { margin-left: 0; }
   #insight { display: flex; }
 }
+
+/* ---------- innlogging ---------- */
+body.login-page { display: grid; place-items: center; grid-template-columns: 1fr; min-height: 100vh; height: auto; padding: 16px; }
+.login-card { width: 100%; max-width: 360px; padding: 28px; display: flex; flex-direction: column; gap: 14px; }
+.login-card .brand { margin-bottom: 6px; }
+.login-card label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500; color: var(--text-2); }
+.login-card input {
+  padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--surface-2); color: var(--text); font: inherit;
+}
+button.primary { background: var(--accent); color: #fff; padding: 10px; font-weight: 600; border-radius: 10px; }
+button.primary:hover { background: var(--accent); filter: brightness(1.05); border-color: transparent; }
+button.primary:disabled { opacity: .6; cursor: default; }
+.login-error { margin: 0; font-size: 13px; color: var(--down); }
+.login-note { margin: 0; font-size: 12px; color: var(--muted); text-align: center; }

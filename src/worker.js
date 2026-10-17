@@ -1,4 +1,5 @@
 import { analyze, SIGNAL_TEXT } from '../public/ichimoku.js';
+import { isLoggedIn, login, logout } from './auth.js';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 const INTERVALS = { '1d': '2y', '1wk': '10y' };
@@ -173,6 +174,16 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const p = url.pathname;
+
+    // Alt unntatt innloggingssiden krever innlogging.
+    if (p === '/api/login' && request.method === 'POST') return login(request, env);
+    if (p === '/api/logout' && request.method === 'POST') return logout();
+    if (['/login', '/login.html', '/style.css'].includes(p)) return env.ASSETS.fetch(request);
+    if (!(await isLoggedIn(request, env))) {
+      if (p.startsWith('/api/')) return json({ error: 'Ikke innlogget' }, 401);
+      return Response.redirect(new URL(`/login?neste=${encodeURIComponent(p)}`, url).toString(), 302);
+    }
+
     try {
       if (p === '/api/chart') {
         const symbol = url.searchParams.get('symbol') || '';

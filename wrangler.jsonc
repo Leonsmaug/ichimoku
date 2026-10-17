@@ -6,7 +6,7 @@
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": true
   },
   "kv_namespaces": [
     { "binding": "STATE", "id": "501dbc4d443b4cb283b39c3214ce083f" }
@@ -16,5 +16,5 @@
   "vars": {
     "APP_URL": ""
   }
-  // NTFY_TOPIC settes som hemmelighet i Cloudflare-dashbordet.
+  // Secrets settes i Cloudflare-dashbordet: APP_USER, APP_PASSWORD og NTFY_TOPIC.
 }

@@ -39,6 +39,10 @@ $('theme').addEventListener('click', () => {
   applyChartTheme();
   renderDonut();
 });
+$('logout').addEventListener('click', async () => {
+  await fetch('/api/logout', { method: 'POST' }).catch(() => {});
+  location.href = '/login';
+});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { applyChartTheme(); renderDonut(); });
 
 // ---------- Graf ----------
@@ -244,6 +248,7 @@ function showInsight(data, result) {
 
 async function api(path, opts) {
   const res = await fetch(path, opts);
+  if (res.status === 401) { location.href = `/login?neste=/${location.hash}`; throw new Error('Ikke innlogget'); }
   const body = await res.json();
   if (!res.ok) throw new Error(body.error || res.statusText);
   return body;

@@ -50,8 +50,16 @@ test('fetchCandles normaliserer og gir dato i børsens tidssone', async () => {
   assert.equal(d.name, 'UP.OL ASA');
 });
 
+const CREDS = { APP_USER: 'ole', APP_PASSWORD: 'hemmelig-passord' };
+async function loginCookie(env, username = 'ole', password = 'hemmelig-passord') {
+  const r = await worker.fetch(new Request('https://x/api/login', { method: 'POST', body: JSON.stringify({ username, password }) }), env);
+  return { status: r.status, cookie: (r.headers.get('set-cookie') || '').split(';')[0] };
+}
+
 test('API: chart, scan og ugyldig ticker', async () => {
-  const env = { STATE: kv(), ASSETS: { fetch: () => new Response('asset') } };
+  const env = { STATE: kv(), ASSETS: { fetch: () => new Response('asset') }, ...CREDS };
+  const { cookie } = await loginCookie(env);
+  const Request = class extends globalThis.Request { constructor(u, o = {}) { super(u, { ...o, headers: { cookie } }); } };
   let r = await worker.fetch(new Request('https://x/api/chart?symbol=UP.OL'), env);
   assert.equal(r.status, 200);
   r = await worker.fetch(new Request('https://x/api/chart?symbol=<script>'), env);
@@ -99,4 +107,37 @@ test('finner hovedkontor via Brønnøysund og Kartverket', async () => {
   await companyLocation('EQNR.OL', 'Equinor ASA', env);
   assert.equal(calls.length, n, 'andre oppslag kommer fra cache');
   assert.deepEqual(await companyLocation('AAPL', 'Apple Inc.', env), { norwegian: false });
+});
+
+test('innlogging: krever cookie, avviser feil passord og stopper gjetting', async () => {
+  const env = { STATE: kv(), ASSETS: { fetch: (req) => new Response('asset:' + new URL(req.url).pathname) }, ...CREDS };
+  let r = await worker.fetch(new Request('https://x/api/watchlist'), env);
+  assert.equal(r.status, 401);
+  r = await worker.fetch(new Request('https://x/'), env);
+  assert.equal(r.status, 302);
+  assert.match(r.headers.get('location'), /\/login\?neste=%2F$/);
+  r = await worker.fetch(new Request('https://x/login'), env);
+  assert.equal(await r.text(), 'asset:/login');
+
+  assert.equal((await loginCookie(env, 'ole', 'feil')).status, 401);
+  const ok = await loginCookie(env);
+  assert.equal(ok.status, 200);
+  assert.match(ok.cookie, /^sv_session=/);
+  r = await worker.fetch(new Request('https://x/', { headers: { cookie: ok.cookie } }), env);
+  assert.equal(await r.text(), 'asset:/');
+
+  // Forfalsket eller gammel cookie slippes ikke inn, og nytt passord ugyldiggjør økten.
+  r = await worker.fetch(new Request('https://x/api/watchlist', { headers: { cookie: ok.cookie.slice(0, -3) + 'abc' } }), env);
+  assert.equal(r.status, 401);
+  r = await worker.fetch(new Request('https://x/api/watchlist', { headers: { cookie: ok.cookie } }), { ...env, APP_PASSWORD: 'nytt' });
+  assert.equal(r.status, 401);
+
+  for (let i = 0; i < 8; i++) await loginCookie(env, 'ole', 'feil' + i);
+  assert.equal((await loginCookie(env)).status, 429, 'blokkert etter mange feil');
+});
+
+test('innlogging uten oppsatte secrets er stengt', async () => {
+  const env = { STATE: kv(), ASSETS: { fetch: () => new Response('asset') } };
+  assert.equal((await loginCookie(env)).status, 503);
+  assert.equal((await worker.fetch(new Request('https://x/api/scan?symbols=UP.OL'), env)).status, 401);
 });

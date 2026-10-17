@@ -28,7 +28,7 @@ Svakt kjøpssignal: kursbrudd opp gjennom skyen, eller TK-kryss som ikke er unde
 
 1. Workers & Pages → Create → Import a repository → velg dette repoet. Build command: tom. Deploy command: `npx wrangler deploy`.
 2. Varsler: installer ntfy-appen på mobilen og abonner på et hemmelig emnenavn. Legg samme navn inn som hemmelighet `NTFY_TOPIC` under workerens Settings → Variables and Secrets. Sett gjerne `APP_URL` til adressen til siden, så åpner varselet riktig aksje.
-3. Bare for deg: Settings → Domains & Routes → workers.dev → slå på Cloudflare Access, og tillat bare din e-post.
+3. Innlogging: legg inn `APP_USER` (brukernavn) og `APP_PASSWORD` (passord) som secrets under Settings → Variables and Secrets. Uten dem er siden stengt. Innloggingen varer i 30 dager per nettleser, og bytter du passord blir alle logget ut. Etter 8 feil forsøk fra samme IP stenges innlogging i et kvarter.
 
 ## Lokalt
 

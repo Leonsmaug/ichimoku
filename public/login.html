@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Logg inn · Skyvakt</title>
+  <meta name="robots" content="noindex">
+  <script>
+    try {
+      const t = localStorage.getItem('ichimoku.theme');
+      if (t) document.documentElement.dataset.theme = t;
+    } catch {}
+  </script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M9 24h15a6 6 0 0 0 .6-12A8 8 0 0 0 9.3 14 5 5 0 0 0 9 24z' fill='%23d97757'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="login-page">
+  <form id="login" class="panel login-card" autocomplete="on">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M9 24h15a6 6 0 0 0 .6-12A8 8 0 0 0 9.3 14 5 5 0 0 0 9 24z"/></svg>
+      <div>
+        <h1>Skyvakt</h1>
+        <span>Logg inn for å fortsette</span>
+      </div>
+    </div>
+    <label>Brukernavn
+      <input name="username" autocomplete="username" required autofocus>
+    </label>
+    <label>Passord
+      <input name="password" type="password" autocomplete="current-password" required>
+    </label>
+    <p id="error" class="login-error" role="alert" hidden></p>
+    <button type="submit" class="primary">Logg inn</button>
+    <p class="login-note">Du forblir innlogget i 30 dager på denne maskinen.</p>
+  </form>
+  <script>
+    const form = document.getElementById('login');
+    const err = document.getElementById('error');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      err.hidden = true;
+      const btn = form.querySelector('button');
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(Object.fromEntries(new FormData(form))),
+        });
+        if (res.ok) {
+          const next = new URLSearchParams(location.search).get('neste') || '/';
+          location.href = (next.startsWith('/') && !next.startsWith('//') ? next : '/') + location.hash;
+          return;
+        }
+        err.textContent = (await res.json().catch(() => ({}))).error || 'Innloggingen feilet.';
+      } catch {
+        err.textContent = 'Fikk ikke kontakt med serveren.';
+      }
+      err.hidden = false;
+      btn.disabled = false;
+    });
+  </script>
+</body>
+</html>
