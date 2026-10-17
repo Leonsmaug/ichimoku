@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ichimoku</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='3' y='4' width='3' height='8' fill='%2326a69a'/><rect x='10' y='2' width='3' height='9' fill='%23ef5350'/></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside id="sidebar">
+    <div class="side-head">
+      <h1>Ichimoku</h1>
+      <button id="refresh" title="Oppdater signaler">↻</button>
+    </div>
+    <div class="search">
+      <input id="search" type="search" placeholder="Legg til ticker eller selskap…" autocomplete="off">
+      <ul id="suggestions" hidden></ul>
+    </div>
+    <div class="presets">
+      <span>Legg til:</span>
+      <button data-preset="evighet">Evighetsportefølje</button>
+      <button data-preset="obx">OBX</button>
+      <button data-preset="nasdaq">Nasdaq topp</button>
+    </div>
+    <label class="filter"><input type="checkbox" id="only-buy"> Vis bare kjøpssignal</label>
+    <ul id="watchlist"></ul>
+    <p class="side-foot">Status beregnes på siste daglige candle.</p>
+  </aside>
+
+  <main>
+    <header id="info">
+      <div class="title">
+        <h2 id="sym">Velg en aksje</h2>
+        <span id="name"></span>
+      </div>
+      <div class="price"><span id="last"></span> <span id="chg"></span></div>
+      <div id="signal" class="badge"></div>
+      <div class="toggle" role="group" aria-label="Intervall">
+        <button data-interval="1d" class="active">Dag</button>
+        <button data-interval="1wk">Uke</button>
+      </div>
+    </header>
+    <ul id="conditions"></ul>
+    <div id="chart"></div>
+    <div id="legend">
+      <span><i style="background:#2962ff"></i>Tenkan (9)</span>
+      <span><i style="background:#e91e63"></i>Kijun (26)</span>
+      <span><i style="background:#ab47bc"></i>Chikou</span>
+      <span><i style="background:#26a69a"></i>Senkou A</span>
+      <span><i style="background:#ef5350"></i>Senkou B</span>
+      <span>▲ sterkt kjøpssignal · △ brudd opp gjennom skyen</span>
+    </div>
+    <p class="disclaimer">Teknisk analyse, ikke personlig investeringsrådgivning. Ichimoku gir mange falske signaler i sidelengs marked og sier ingenting om selskapets verdi. Kurser fra Yahoo Finance, kan være forsinket.</p>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
