@@ -49,3 +49,21 @@ test('for kort historikk gir ingen status', () => {
   const { status } = analyze(series(Array.from({ length: 50 }, () => 100)));
   assert.equal(status, null);
 });
+
+test('backtest og innsikt', async () => {
+  const { backtest, insights } = await import('../public/ichimoku.js');
+  const closes = [
+    ...Array.from({ length: 80 }, (_, i) => 200 - i),
+    ...Array.from({ length: 40 }, () => 120),
+    ...Array.from({ length: 90 }, (_, i) => 120 + i * 2),
+  ];
+  const c = series(closes);
+  const res = analyze(c);
+  const [bt20] = backtest(c, res.events, [20]);
+  assert.ok(bt20.count >= 1);
+  assert.ok(bt20.avg > 0 && bt20.hit === 1);
+  const ins = insights(c, res);
+  assert.ok(ins.distance > 0, 'kurs over skyen gir positiv avstand');
+  assert.equal(ins.curGreen, true);
+  assert.equal(typeof ins.sinceStrong, 'number');
+});

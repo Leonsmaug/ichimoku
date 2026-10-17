@@ -1,6 +1,6 @@
-# Ichimoku
+# Skyvakt
 
-Personlig nettside for teknisk analyse med Ichimoku-sky og kjøpssignaler, i TradingView-stil.
+Personlig nettside for teknisk analyse med Ichimoku-sky og kjøpssignaler. Lys og mørk modus, lesning i klartekst, historikk for signalene og kakediagram over watchlisten.
 Kjører gratis på Cloudflare Workers.
 
 *Teknisk analyse, ikke personlig investeringsrådgivning.*

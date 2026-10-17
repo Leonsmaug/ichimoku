@@ -98,3 +98,48 @@ export const SIGNAL_TEXT = {
   noytral: 'I skyen',
   under: 'Under skyen',
 };
+
+// Hvordan har sterke kjøpssignaler gått tidligere for denne aksjen?
+// Sammenlignes med snittavkastningen for en tilfeldig dag i samme periode.
+export function backtest(candles, events, horizons = [20, 60]) {
+  const n = candles.length;
+  return horizons.map((h) => {
+    const rets = events
+      .filter((e) => e.type === 'sterk' && e.index + h < n)
+      .map((e) => candles[e.index + h].close / candles[e.index].close - 1);
+    let base = 0, cnt = 0;
+    for (let i = DEFAULTS.senkou + DEFAULTS.shift; i + h < n; i++) { base += candles[i + h].close / candles[i].close - 1; cnt++; }
+    const avg = rets.length ? rets.reduce((s, r) => s + r, 0) / rets.length : null;
+    const hit = rets.length ? rets.filter((r) => r > 0).length / rets.length : null;
+    return { horizon: h, count: rets.length, avg, hit, baseline: cnt ? base / cnt : null };
+  });
+}
+
+// Nøkkeltall som ikke vises direkte i grafen.
+export function insights(candles, result) {
+  const { ich, events, status } = result;
+  if (!status) return null;
+  const n = candles.length, i = n - 1, p = ich.params;
+  const close = candles[i].close;
+  const top = Math.max(ich.spanA[i], ich.spanB[i]), bottom = Math.min(ich.spanA[i], ich.spanB[i]);
+  const distance = close > top ? close / top - 1 : close < bottom ? close / bottom - 1 : 0;
+
+  // Skifter skyen farge i løpet av de neste 26 periodene?
+  const nowGreen = ich.futureA[i] > ich.futureB[i];
+  const curGreen = ich.spanA[i] > ich.spanB[i];
+  let twistIn = null;
+  for (let j = i - p.shift + 1; j <= i; j++) {
+    if (ich.futureA[j] == null) continue;
+    if ((ich.futureA[j] > ich.futureB[j]) !== curGreen) { twistIn = j + p.shift - i; break; }
+  }
+  const lastStrong = [...events].reverse().find((e) => e.type === 'sterk');
+  return {
+    distance,
+    cloudThickness: (top - bottom) / close,
+    curGreen,
+    futureGreen: nowGreen,
+    twistIn,
+    sinceStrong: lastStrong ? i - lastStrong.index : null,
+    lastStrongTime: lastStrong?.time ?? null,
+  };
+}

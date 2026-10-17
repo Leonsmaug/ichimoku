@@ -149,6 +149,17 @@ export default {
         }
         return json(await getWatchlist(env));
       }
+      if (p === '/api/weights') {
+        if (request.method === 'PUT') {
+          if (!env.STATE) return json({ error: 'KV er ikke koblet til' }, 500);
+          const w = await request.json();
+          const clean = Object.fromEntries(Object.entries(w || {})
+            .filter(([s, v]) => SYMBOL_RE.test(s) && Number.isFinite(+v) && +v > 0).slice(0, 100).map(([s, v]) => [s, +v]));
+          await env.STATE.put('weights', JSON.stringify(clean));
+          return json(clean);
+        }
+        return json((env.STATE && (await env.STATE.get('weights', 'json'))) || {});
+      }
       if (p === '/api/test-alert' && request.method === 'POST') {
         if (!env.NTFY_TOPIC) return json({ error: 'NTFY_TOPIC er ikke satt' }, 400);
         await notify(env, 'Ichimoku: testvarsel', 'Varsler fungerer. Du får beskjed når en aksje i watchlisten får nytt kjøpssignal.', '');
