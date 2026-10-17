@@ -222,23 +222,30 @@ function renderDist() {
       labels += `<text x="${l.x}" y="${l.y}" text-anchor="${right ? 'start' : 'end'}" dominant-baseline="middle" class="sun-out">${esc(l.name)}</text>`;
     }
   }
+  // Uten navn rundt (mobil) trengs ikke margen til tekst, så diagrammet kan bli større.
+  svg.setAttribute('viewBox', matchMedia('(max-width: 860px)').matches ? `${CX - R1 - 6} ${CY - R1 - 6} ${2 * R1 + 12} ${2 * R1 + 12}` : '0 0 900 660');
   svg.innerHTML = `<g class="sun-slices">${out}</g>${labels}`;
   $('pf-sectors').innerHTML = `<thead><tr><th>Sektor</th><th>Andel</th><th>Verdi</th></tr></thead><tbody>${groups.map((g) => `
     <tr><td><span class="sw" style="background:${g.s.color}"></span>${g.s.label}</td><td>${share(g.value / total)}</td><td>${kr(g.value)}</td></tr>`).join('')}</tbody>`;
 }
 
 const tip = $('sun-tip');
-$('sunburst').addEventListener('mousemove', (e) => {
+function showTip(e) {
   const i = e.target.dataset?.i;
   if (i == null) { tip.hidden = true; return; }
   const it = state.sunItems[+i];
   const wrap = $('sunburst').parentElement.getBoundingClientRect();
   tip.hidden = false;
-  tip.style.left = `${e.clientX - wrap.left}px`;
+  // Hold boblen innenfor kanten på smale skjermer.
+  const half = Math.min(120, wrap.width / 2);
+  tip.style.left = `${Math.min(Math.max(e.clientX - wrap.left, half), wrap.width - half)}px`;
   tip.style.top = `${e.clientY - wrap.top}px`;
   const g = it.cash ? '' : ` · gevinst ${signed(it.gain)}`;
   tip.textContent = `${it.title}${it.sector ? ` (${it.sector})` : ''}: ${share(it.value / it.total)} · ${kr(it.value)}${g}`;
-});
+}
+$('sunburst').addEventListener('mousemove', showTip);
+// På mobil vises samme info når du trykker på en bit.
+$('sunburst').addEventListener('click', showTip);
 $('sunburst').addEventListener('mouseleave', () => { tip.hidden = true; });
 
 // ---------- Tabeller ----------
@@ -249,10 +256,10 @@ function renderAccounts() {
     return { name: a.name, value: sum(rows, 'value'), day: sum(rows, 'day'), gain: sum(inv, 'gain'), cost: sum(inv, 'cost') };
   });
   const total = sum(accounts, 'value');
-  $('pf-accounts').innerHTML = `<thead><tr><th>Konto</th><th>Verdi</th><th class="hide-s">Andel</th><th>I dag</th><th>Gevinst</th><th class="hide-s">Gevinst %</th></tr></thead>
+  $('pf-accounts').innerHTML = `<thead><tr><th>Konto</th><th>Verdi</th><th class="hide-s">Andel</th><th class="hide-xs">I dag</th><th>Gevinst</th><th class="hide-s">Gevinst %</th></tr></thead>
     <tbody>${accounts.map((a) => `<tr data-account="${esc(a.name)}" class="${a.name === state.account ? 'on' : ''}">
       <td>${esc(a.name)}</td><td>${kr(a.value)}</td><td class="hide-s">${share(total ? a.value / total : 0)}</td>
-      <td class="${cls(a.day)}">${signed(a.day)}</td><td class="${cls(a.gain)}">${signed(a.gain)}</td><td class="hide-s ${cls(a.gain)}">${pct(a.cost > 0 ? a.gain / a.cost : null)}</td></tr>`).join('')}</tbody>`;
+      <td class="hide-xs ${cls(a.day)}">${signed(a.day)}</td><td class="${cls(a.gain)}">${signed(a.gain)}</td><td class="hide-s ${cls(a.gain)}">${pct(a.cost > 0 ? a.gain / a.cost : null)}</td></tr>`).join('')}</tbody>`;
 }
 $('pf-accounts').addEventListener('click', (e) => {
   const tr = e.target.closest('tr[data-account]');
