@@ -1,6 +1,6 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { fetchCandles, runAlerts } from '../src/worker.js';
+import worker, { fetchCandles, runAlerts, companyLocation } from '../src/worker.js';
 
 // Lager et Yahoo-lignende svar: nedtur, sidelengs, så kraftig oppgang.
 function yahoo(symbol, closes) {
@@ -72,4 +72,31 @@ test('varsler bare én gang per nytt kjøpssignal', async () => {
   assert.match(sent[0].title, /UP\.OL: Sterkt kjøpssignal/);
   const second = await runAlerts(env);
   assert.equal(second.sent, 0);
+});
+
+test('finner hovedkontor via Brønnøysund og Kartverket', async () => {
+  const calls = [];
+  globalThis.fetch = async (url) => {
+    url = String(url); calls.push(url);
+    if (url.includes('/enheter?')) return new Response(JSON.stringify({ _embedded: { enheter: [
+      { organisasjonsnummer: '111111111', navn: 'EQUINOR ENERGY AS' },
+      { organisasjonsnummer: '923609016', navn: 'EQUINOR ASA', forretningsadresse: {} },
+    ] } }));
+    if (url.includes('/enheter/923609016')) return new Response(JSON.stringify({
+      navn: 'EQUINOR ASA', forretningsadresse: { adresse: ['Forusbeen 50'], postnummer: '4035', poststed: 'STAVANGER', landkode: 'NO' },
+    }));
+    if (url.includes('ws.geonorge.no')) return new Response(JSON.stringify({ adresser: [{ representasjonspunkt: { lat: 58.89, lon: 5.72 } }] }));
+    throw new Error('uventet ' + url);
+  };
+  const env = { STATE: kv() };
+  const r = await companyLocation('EQNR.OL', 'Equinor ASA', env);
+  assert.equal(r.orgnr, '923609016');
+  assert.equal(r.address, 'Forusbeen 50, 4035 Stavanger');
+  assert.equal(r.name, 'Equinor ASA');
+  assert.deepEqual(r.point, { lat: 58.89, lon: 5.72 });
+  assert.equal(r.exact, true);
+  const n = calls.length;
+  await companyLocation('EQNR.OL', 'Equinor ASA', env);
+  assert.equal(calls.length, n, 'andre oppslag kommer fra cache');
+  assert.deepEqual(await companyLocation('AAPL', 'Apple Inc.', env), { norwegian: false });
 });

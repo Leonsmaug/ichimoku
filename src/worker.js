@@ -57,6 +57,59 @@ async function search(q) {
     .map((x) => ({ symbol: x.symbol, name: x.longname || x.shortname || x.symbol, exchange: x.exchDisp || x.exchange }));
 }
 
+// «KONGSBERG GRUPPEN ASA» -> «Kongsberg Gruppen ASA»
+const pretty = (s) => s.toLowerCase().replace(/(^|[\s\-/])(\p{L})/gu, (m, a, b) => a + b.toUpperCase())
+  .replace(/\b(Asa|As|Sa|Ab|Nv)\b/g, (m) => m.toUpperCase());
+const norm = (s) => s.toLowerCase().replace(/[^a-z0-9æøå]/g, '');
+
+// Finner selskapet i Enhetsregisteret ut fra navnet Yahoo oppgir (f.eks. «Equinor ASA»).
+async function findOrgnr(name) {
+  for (const form of ['ASA', '']) {
+    const url = `https://data.brreg.no/enhetsregisteret/api/enheter?navn=${encodeURIComponent(name)}&size=10${form ? `&organisasjonsform=${form}` : ''}`;
+    const res = await fetch(url, { headers: { accept: 'application/json' }, cf: { cacheTtl: 86400, cacheEverything: true } });
+    if (!res.ok) continue;
+    const list = (await res.json())?._embedded?.enheter || [];
+    const hit = list.find((e) => norm(e.navn) === norm(name)) || list.find((e) => e.forretningsadresse);
+    if (hit) return hit.organisasjonsnummer;
+  }
+  return null;
+}
+
+// Forretningsadresse fra Brønnøysund og koordinater fra Kartverkets adresse-API.
+export async function companyLocation(symbol, name, env) {
+  if (!symbol.endsWith('.OL')) return { norwegian: false };
+  const key = `company:${symbol}`;
+  const cached = env?.STATE && (await env.STATE.get(key, 'json'));
+  if (cached) return cached;
+
+  const orgnr = await findOrgnr(name.replace(/\s+\(publ\)$/i, ''));
+  if (!orgnr) return { norwegian: true, found: false };
+  const res = await fetch(`https://data.brreg.no/enhetsregisteret/api/enheter/${orgnr}`, { headers: { accept: 'application/json' } });
+  if (!res.ok) throw new Error(`Brønnøysund svarte ${res.status}`);
+  const e = await res.json();
+  const a = e.forretningsadresse || e.postadresse;
+  if (!a) return { norwegian: true, found: false, orgnr };
+  const street = (a.adresse || []).filter(Boolean).join(', ');
+  const address = [street, `${a.postnummer || ''} ${pretty(a.poststed || '')}`.trim()].filter(Boolean).join(', ');
+
+  let point = null, exact = false;
+  if (a.landkode === 'NO' || !a.landkode) {
+    const q = new URLSearchParams({ sok: street || a.poststed || '', treffPerSide: '1', utkoordsys: '4258' });
+    if (a.postnummer) q.set('postnummer', a.postnummer);
+    let g = await (await fetch(`https://ws.geonorge.no/adresser/v1/sok?${q}`)).json().catch(() => null);
+    exact = !!g?.adresser?.length;
+    if (!exact && a.postnummer) {
+      // Fant ikke gateadressen: bruk et punkt i postnummeret.
+      g = await (await fetch(`https://ws.geonorge.no/adresser/v1/sok?postnummer=${a.postnummer}&treffPerSide=1&utkoordsys=4258`)).json().catch(() => null);
+    }
+    const p = g?.adresser?.[0]?.representasjonspunkt;
+    if (p) point = { lat: p.lat, lon: p.lon };
+  }
+  const out = { norwegian: true, found: true, orgnr, name: pretty(e.navn), address, point, exact };
+  if (env?.STATE) await env.STATE.put(key, JSON.stringify(out), { expirationTtl: 30 * 86400 });
+  return out;
+}
+
 async function scan(symbols, interval = '1d') {
   const out = {};
   // Små porsjoner så vi holder oss under grensen for samtidige subrequests.
@@ -148,6 +201,12 @@ export default {
           return json(clean);
         }
         return json(await getWatchlist(env));
+      }
+      if (p === '/api/company') {
+        const symbol = url.searchParams.get('symbol') || '';
+        const name = (url.searchParams.get('name') || '').slice(0, 120);
+        if (!SYMBOL_RE.test(symbol) || !name) return json({ error: 'Mangler ticker eller navn' }, 400);
+        return json(await companyLocation(symbol, name, env), 200, 86400);
       }
       if (p === '/api/weights') {
         if (request.method === 'PUT') {

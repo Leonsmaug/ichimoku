@@ -209,6 +209,18 @@ main { display: flex; flex-direction: column; gap: 12px; min-width: 0; height: c
 #donut-legend .v { color: var(--text-2); font-variant-numeric: tabular-nums; }
 .weight { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--text-2); border-top: 1px solid var(--line); padding-top: 12px; }
 .weight input { width: 64px; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); font: inherit; text-align: right; }
+.sub a { color: var(--accent); }
+.map-wrap { position: relative; height: 220px; border-radius: 12px; overflow: hidden; background: var(--surface-2); }
+#map { position: absolute; inset: 0; }
+.map-activate {
+  position: absolute; inset: 0; width: 100%; border-radius: 0; border: none;
+  background: rgba(31, 30, 28, .28); color: #fff; font-weight: 600; backdrop-filter: blur(1px);
+}
+.map-activate:hover { background: rgba(31, 30, 28, .4); border: none; }
+.map-wrap.active .map-activate { display: none; }
+.maplibregl-popup-content { font: 13px/1.4 Inter, sans-serif; color: #1f1e1c; border-radius: 10px; padding: 10px 12px; }
+.maplibregl-popup-content b { display: block; font-size: 14px; }
+.maplibregl-popup-content small { color: #5e5b54; }
 .disclaimer { font-size: 11px; color: var(--muted); margin: 0 4px 8px; }
 
 @media (max-width: 1180px) {

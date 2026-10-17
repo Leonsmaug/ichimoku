@@ -9,7 +9,8 @@ Kjører gratis på Cloudflare Workers.
 
 - `public/` – nettsiden (statiske filer). Grafen er TradingView Lightweight Charts v5.2.1, lagt inn i `public/vendor/`.
 - `public/ichimoku.js` – Ichimoku-beregning og signaler. Brukes av både nettsiden og workeren.
-- `src/worker.js` – API (`/api/chart`, `/api/search`, `/api/scan`, `/api/watchlist`) som henter kurser fra Yahoo Finance, og den daglige varslingsjobben.
+- Kart over hovedkontoret for norske selskaper: adresse fra Brønnøysundregistrene, koordinater fra Kartverkets adresse-API, vist med MapLibre GL JS 5.24.0 (lagt inn i `public/vendor/maplibre/`) og OpenFreeMap-stilen liberty.
+- `src/worker.js` – API (`/api/chart`, `/api/search`, `/api/scan`, `/api/watchlist`, `/api/weights`, `/api/company`) som henter kurser fra Yahoo Finance, og den daglige varslingsjobben.
 - `wrangler.jsonc` – Cloudflare-oppsett: KV-lagring for watchlist og cron hverdager 15:30 og 21:30 UTC.
 
 ## Signaler

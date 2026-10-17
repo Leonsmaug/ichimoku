@@ -264,10 +264,72 @@ async function select(symbol) {
     const result = draw(data);
     showHeader(data, result.status);
     showInsight(data, result);
+    showCompany(data);
     document.title = `${short(data.symbol)} · Skyvakt`;
   } catch (e) {
     el.insertAdjacentHTML('beforeend', `<div class="msg">Kunne ikke hente ${symbol}: ${e.message}</div>`);
   }
+}
+
+// ---------- Kart over hovedkontoret ----------
+let mapLib, map, marker;
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+function loadMapLibre() {
+  if (mapLib) return mapLib;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'vendor/maplibre/maplibre-gl.css';
+  document.head.append(link);
+  mapLib = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'vendor/maplibre/maplibre-gl.js';
+    s.onload = () => resolve(window.maplibregl);
+    s.onerror = reject;
+    document.head.append(s);
+  });
+  return mapLib;
+}
+
+function setMapInteractive(on) {
+  for (const h of ['scrollZoom', 'dragPan', 'dragRotate', 'touchZoomRotate', 'doubleClickZoom', 'keyboard', 'boxZoom']) {
+    map[h][on ? 'enable' : 'disable']();
+  }
+  $('map-activate').parentElement.classList.toggle('active', on);
+}
+$('map-activate').addEventListener('click', () => map && setMapInteractive(true));
+
+async function showCompany(data) {
+  const card = $('hq-card');
+  const symbol = data.symbol;
+  let info;
+  try { info = await api(`/api/company?symbol=${encodeURIComponent(symbol)}&name=${encodeURIComponent(data.name)}`); } catch { info = null; }
+  if (state.current !== symbol) return;
+  // Kartet vises bare for selskaper i Enhetsregisteret.
+  if (!info?.found || !info.point) { card.hidden = true; return; }
+  card.hidden = false;
+  $('hq-text').innerHTML = `${esc(info.name)} · org.nr. <a href="https://virksomhet.brreg.no/nb/oppslag/enheter/${esc(info.orgnr)}" target="_blank" rel="noopener">${esc(info.orgnr)}</a><br>${esc(info.address)}${info.exact ? '' : ' (omtrentlig plassering)'}`;
+  const maplibregl = await loadMapLibre();
+  const center = [info.point.lon, info.point.lat];
+  if (!map) {
+    map = new maplibregl.Map({
+      container: 'map',
+      style: 'https://tiles.openfreemap.org/styles/liberty',
+      center, zoom: 14, attributionControl: { compact: true },
+    });
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+    map.addControl(new maplibregl.FullscreenControl(), 'top-right');
+    marker = new maplibregl.Marker({ color: '#d6342c' }).setLngLat(center).addTo(map);
+    // Kartet tar ikke over scrollingen før det er aktivert, og låses igjen når musa forlater det.
+    setMapInteractive(false);
+    $('map').parentElement.addEventListener('mouseleave', () => { if (!document.fullscreenElement) setMapInteractive(false); });
+    document.addEventListener('fullscreenchange', () => { if (document.fullscreenElement) setMapInteractive(true); });
+  } else {
+    marker.setLngLat(center);
+    map.jumpTo({ center, zoom: 14 });
+    map.resize();
+  }
+  marker.setPopup(new maplibregl.Popup({ offset: 28, closeButton: false })
+    .setHTML(`<b>${esc(info.name)}</b><small>${esc(info.address)}</small>`));
 }
 
 // ---------- Watchlist ----------
