@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nn-portefølje · Skyvakt</title>
+  <script>
+    try {
+      const t = localStorage.getItem('ichimoku.theme');
+      if (t) document.documentElement.dataset.theme = t;
+    } catch {}
+  </script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M9 24h15a6 6 0 0 0 .6-12A8 8 0 0 0 9.3 14 5 5 0 0 0 9 24z' fill='%23d97757'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="pf-page">
+  <header class="pf-top panel">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M9 24h15a6 6 0 0 0 .6-12A8 8 0 0 0 9.3 14 5 5 0 0 0 9 24z"/></svg>
+      <div>
+        <h1>Nn-portefølje</h1>
+        <span id="pf-status">Henter kurser …</span>
+      </div>
+    </div>
+    <div class="pf-actions">
+      <a class="mini-link" href="/">← Analyse</a>
+      <button id="pf-import" class="mini">Importer</button>
+      <button id="pf-export" class="mini">Eksporter</button>
+      <button id="pf-refresh" class="icon-btn small" title="Oppdater kurser">
+        <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v4.5h-4.5"/></svg>
+      </button>
+      <button id="theme" class="icon-btn" title="Bytt mellom lyst og mørkt">
+        <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>
+        <svg class="moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <section id="pf-empty" class="panel pf-empty" hidden>
+    <h2>Ingen portefølje lagt inn ennå</h2>
+    <p>Trykk <b>Importer</b> og velg porteføljefilen (JSON). Den lagres bare bak innloggingen din, ikke i koden på GitHub.</p>
+  </section>
+
+  <section id="pf-stats" class="pf-stats"></section>
+
+  <section class="panel pf-card" id="pf-dist">
+    <div class="pf-card-head">
+      <h3 id="pf-dist-title">Fordeling</h3>
+      <div class="seg" role="group" aria-label="Innhold">
+        <button data-scope="alt" class="active">Alt</button>
+        <button data-scope="aksjer">Bare aksjer</button>
+      </div>
+    </div>
+    <div class="pf-chips" id="pf-chips" role="group" aria-label="Konto"></div>
+    <div class="pf-dist">
+      <div class="sun-wrap">
+        <svg id="sunburst" viewBox="0 0 900 660" role="img" aria-label="Fordeling etter sektor og selskap"></svg>
+        <div id="sun-tip" class="tip" hidden></div>
+      </div>
+      <table id="pf-sectors" class="pf-table compact"></table>
+    </div>
+    <p class="sub">Sektorer etter GICS, standarden Oslo Børs og MSCI bruker. Fond og ETF-er er samlet for seg.</p>
+  </section>
+
+  <section class="panel pf-card">
+    <h3>Kontoer</h3>
+    <table id="pf-accounts" class="pf-table"></table>
+  </section>
+
+  <section class="panel pf-card">
+    <div class="pf-card-head">
+      <h3 id="pf-hold-title">Beholdning</h3>
+    </div>
+    <table id="pf-holdings" class="pf-table"></table>
+  </section>
+
+  <p class="disclaimer">Analyse, ikke personlig investeringsrådgivning. Kurser fra Yahoo Finance, kan være forsinket. Gevinst er regnet mot anskaffelsesverdien i Nordnet-rapporten, inkludert valutaendring. Papirer uten live kurs bruker kursen fra rapporten (merket R).</p>
+
+  <dialog id="pf-dialog">
+    <form method="dialog" class="pf-dialog">
+      <h3>Importer portefølje</h3>
+      <p class="sub">Velg en JSON-fil eller lim inn innholdet. Det som ligger der fra før, blir erstattet.</p>
+      <input type="file" id="pf-file" accept=".json,application/json">
+      <textarea id="pf-text" rows="8" placeholder='{"accounts": [...]}'></textarea>
+      <p id="pf-error" class="login-error" hidden></p>
+      <div class="pf-dialog-actions">
+        <button value="cancel">Avbryt</button>
+        <button id="pf-save" class="primary" value="default">Lagre</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="portefolje.js"></script>
+</body>
+</html>

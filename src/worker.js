@@ -1,6 +1,7 @@
 import { strategyOf, STRATEGIES } from '../public/strategies.js';
 import { fundamentals } from './fundamentals.js';
 import { isLoggedIn, login, logout } from './auth.js';
+import { getPortfolio, putPortfolio, quotes, resolve } from './portfolio.js';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 const INTERVALS = { '1d': '2y', '1wk': '10y' };
@@ -255,6 +256,25 @@ export default {
           return json(clean);
         }
         return json((env.STATE && (await env.STATE.get('weights', 'json'))) || {});
+      }
+      if (p === '/api/portfolio') {
+        if (request.method === 'PUT') {
+          if (!env.STATE) return json({ error: 'KV er ikke koblet til' }, 500);
+          const body = await request.json().catch(() => null);
+          try { return json(await putPortfolio(env, body)); } catch (e) { return json({ error: e.message }, 400); }
+        }
+        return json(await getPortfolio(env));
+      }
+      if (p === '/api/quotes') {
+        const symbols = [...new Set((url.searchParams.get('symbols') || '').split(',').filter((s) => SYMBOL_RE.test(s)))].slice(0, 100);
+        return json(await quotes(symbols), 200, 30);
+      }
+      if (p === '/api/resolve') {
+        const name = (url.searchParams.get('name') || '').slice(0, 120);
+        const currency = (url.searchParams.get('currency') || '').slice(0, 3);
+        const price = parseFloat(url.searchParams.get('price')) || null;
+        if (!name || !currency) return json({ error: 'Mangler navn eller valuta' }, 400);
+        return json(await resolve(name, currency, price, env));
       }
       if (p === '/api/test-alert' && request.method === 'POST') {
         if (!env.NTFY_TOPIC) return json({ error: 'NTFY_TOPIC er ikke satt' }, 400);

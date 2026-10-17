@@ -317,3 +317,67 @@ button.primary:hover { background: var(--accent); filter: brightness(1.05); bord
 button.primary:disabled { opacity: .6; cursor: default; }
 .login-error { margin: 0; font-size: 13px; color: var(--down); }
 .login-note { margin: 0; font-size: 12px; color: var(--muted); text-align: center; }
+
+/* ---------- Nn-portefølje ---------- */
+.mini-link { display: inline-block; font-size: 11px; font-weight: 600; color: var(--accent); background: var(--accent-soft); padding: 1px 8px; border-radius: 999px; text-decoration: none; }
+.mini-link:hover { filter: brightness(1.1); }
+.brand .mini-link.nn { display: block; width: max-content; margin-top: 3px; }
+button.mini { font-size: 12px; padding: 3px 10px; }
+body.pf-page { display: flex; flex-direction: column; gap: 12px; max-width: 1240px; margin: 0 auto; height: auto; min-height: 100%; }
+.pf-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; }
+#pf-status { font-size: 12px; color: var(--muted); }
+.live-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--up); margin-right: 6px; vertical-align: 1px; animation: pulse 2s infinite; }
+@keyframes pulse { 50% { opacity: .35; } }
+.pf-actions { display: flex; align-items: center; gap: 6px; }
+.pf-empty { padding: 28px; text-align: center; }
+.pf-empty p { color: var(--text-2); }
+.pf-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.pf-stat { padding: 14px 16px; }
+.pf-stat small { display: block; font-size: 12px; color: var(--muted); }
+.pf-stat b { display: block; font-family: Fraunces, Georgia, serif; font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pf-stat span { font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.pf-stat .pos, .pf-table .pos { color: var(--up); } .pf-stat .neg, .pf-table .neg { color: var(--down); }
+.pf-card { padding: 16px 18px; overflow-x: auto; }
+.pf-card h3 { font-size: 18px; margin-bottom: 8px; }
+.pf-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.pf-card-head h3 { margin: 0; }
+.pf-chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 6px; }
+.pf-chips button { font-size: 12px; padding: 4px 11px; white-space: nowrap; }
+.pf-chips button.active { background: var(--accent); color: #fff; }
+.pf-dist { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 16px; align-items: center; }
+.sun-wrap { position: relative; }
+#sunburst { width: 100%; display: block; }
+#sunburst path { stroke: var(--surface); stroke-width: 2; cursor: pointer; transition: opacity .15s; }
+.sun-slices:hover path { opacity: .8; }
+.sun-slices path:hover { opacity: 1; }
+#sunburst text { pointer-events: none; }
+.sun-in { font: 600 13px Inter, sans-serif; }
+.sun-out { font: 12px Inter, sans-serif; fill: var(--text-2); }
+.pf-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.pf-table th { text-align: right; font-weight: 500; color: var(--muted); font-size: 12px; padding: 0 8px 6px; white-space: nowrap; }
+.pf-table th[data-sort] { cursor: pointer; } .pf-table th.sorted { color: var(--text); }
+.pf-table td { text-align: right; padding: 7px 8px; border-top: 1px solid var(--line); white-space: nowrap; }
+.pf-table th:first-child, .pf-table td:first-child { text-align: left; padding-left: 0; white-space: normal; }
+.pf-table tr[data-account] { cursor: pointer; }
+.pf-table tr[data-account]:hover td, .pf-table tr.on td { background: var(--accent-soft); }
+.pf-table .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 8px; vertical-align: -1px; }
+.pf-name a { color: var(--text); text-decoration: none; border-bottom: 1px dotted var(--muted); }
+.pf-name a:hover { color: var(--accent); }
+.pf-name small { display: block; font-size: 11px; color: var(--muted); }
+.pf-table .r { font-style: normal; font-size: 10px; font-weight: 600; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 3px; cursor: help; }
+.pf-table.compact td { padding: 5px 6px; }
+.pf-dialog { display: flex; flex-direction: column; gap: 10px; min-width: min(520px, 86vw); }
+.pf-dialog textarea { font: 12px ui-monospace, monospace; padding: 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); }
+.pf-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.pf-dialog-actions .primary { padding: 6px 16px; }
+#pf-dialog { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--text); padding: 20px; }
+#pf-dialog::backdrop { background: rgba(0, 0, 0, .35); }
+@media (max-width: 860px) {
+  .pf-dist { grid-template-columns: 1fr; }
+  .hide-s { display: none; }
+  .pf-stat b { font-size: 22px; }
+  .pf-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pf-stat { padding: 12px; }
+  .sun-out { display: none; }
+  .pf-table td, .pf-table th { padding-left: 4px; padding-right: 4px; }
+}

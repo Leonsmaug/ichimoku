@@ -15,7 +15,7 @@ Versjon 1 (bare Ichimoku) ligger på grenen `v1`.
 - `public/strategies.js` – de to signalstrategiene, felles for nettside og worker.
 - `src/fundamentals.js` – nøkkeltall fra Yahoo Finance (quoteSummary med cookie og crumb), mellomlagret i KV i 12 timer.
 - Kart over hovedkontoret for norske selskaper: adresse fra Brønnøysundregistrene, koordinater fra Kartverkets adresse-API, vist med MapLibre GL JS 5.24.0 (lagt inn i `public/vendor/maplibre/`) og OpenFreeMap-stilen liberty.
-- `src/worker.js` – API (`/api/chart`, `/api/search`, `/api/scan`, `/api/watchlist`, `/api/weights`, `/api/company`, `/api/settings`, `/api/fundamentals`) som henter kurser fra Yahoo Finance, og den daglige varslingsjobben.
+- `src/worker.js` – API (`/api/chart`, `/api/search`, `/api/scan`, `/api/watchlist`, `/api/weights`, `/api/company`, `/api/settings`, `/api/fundamentals`, `/api/portfolio`, `/api/quotes`, `/api/resolve`) som henter kurser fra Yahoo Finance, og den daglige varslingsjobben.
 - `wrangler.jsonc` – Cloudflare-oppsett: KV-lagring for watchlist og cron hverdager 15:30 og 21:30 UTC.
 
 ## Signaler
@@ -42,6 +42,10 @@ To av tre gir svakt kjøpssignal. Ellers vises positiv trend (over midtlinjen og
 ## Fundamental
 
 Fanen «Fundamental» viser verdsettelse (P/E, forward P/E, P/B, EV/EBITDA, P/S, PEG), lønnsomhet, vekst, utbytte, gjeld og risiko, 52-ukers spenn og analytikernes kursmål. Fargene er grove tommelfingerregler og varierer mye mellom bransjer.
+
+## Nn-portefølje
+
+Egen side på `/portefolje` (lenken «Nn-portefølje» under logoen) med beholdningen fra Nordnet, live kurser fra Yahoo, gevinst mot anskaffelsesverdi (inkludert valuta), dagens endring og et sektordiagram per konto og samlet (GICS-sektorer). Beholdningen importeres som JSON på siden og lagres bare i KV bak innloggingen, aldri i dette repoet. Fond og ETF-er uten ticker slås opp hos Yahoo på navn og godtas bare når valuta og kurs stemmer med rapporten.
 
 ## Oppsett på Cloudflare (én gang)
 
